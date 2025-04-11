@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@openai/api/dist/openai.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ddd;
+            font-family: 'Roboto', sans-serif;
+        }
+        .neon-button {
+            background-color: #00ff00;
+            border: 2px solid #00ff00;
+            color: #121212;
+        }
+        .neon-button:hover {
+            background-color: transparent;
+            color: #00ff00;
+            border-color: #00ff00;
+        }
+        .message-box {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .teleprompter {
+            font-size: 24px;
+            line-height: 1.6;
+            white-space: pre-line;
+            color: #00ff00;
+            text-align: center;
+            transition: transform 1s;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen p-6">
+    <div class="text-center">
+        <h1 class="text-4xl font-bold text-green-500 mb-8">TikTok Assistant</h1>
+        
+        <!-- Input for script generation -->
+        <input id="theme-input" type="text" class="w-full max-w-2xl p-4 rounded-lg bg-gray-700 text-white mb-4" placeholder="Enter TikTok trend or theme..."/>
+        <button id="generate-script-btn" class="mt-4 px-8 py-2 text-lg rounded-full neon-button transition-all">Generate Script</button>
+
+        <!-- Display generated script -->
+        <div id="script-box" class="w-full max-w-2xl mt-4 bg-gray-800 p-4 rounded-lg">
+            <div id="generated-script" class="text-xl text-white"></div>
+        </div>
+
+        <!-- Teleprompter -->
+        <div id="teleprompter-box" class="mt-8 w-full max-w-2xl bg-gray-800 p-6 rounded-lg hidden">
+            <div id="teleprompter" class="teleprompter">Your script will appear here...</div>
+        </div>
+
+        <!-- Controls for teleprompter -->
+        <div class="flex justify-center space-x-4 mt-4">
+            <button id="start-teleprompter-btn" class="px-6 py-2 text-lg rounded-full neon-button transition-all">Start Teleprompter</button>
+            <button id="stop-teleprompter-btn" class="px-6 py-2 text-lg rounded-full neon-button transition-all hidden">Stop Teleprompter</button>
+        </div>
+    </div>
+
+    <script>
+        const OPENAI_API_KEY = 'your-openai-api-key-here'; // Replace with your OpenAI API key
+        const themeInput = document.getElementById('theme-input');
+        const generateScriptBtn = document.getElementById('generate-script-btn');
+        const generatedScriptDiv = document.getElementById('generated-script');
+        const teleprompterBox = document.getElementById('teleprompter-box');
+        const teleprompterDiv = document.getElementById('teleprompter');
+        const startTeleprompterBtn = document.getElementById('start-teleprompter-btn');
+        const stopTeleprompterBtn = document.getElementById('stop-teleprompter-btn');
+        
+        async function getScriptFromOpenAI(theme) {
+            try {
+                const response = await axios.post('https://api.openai.com/v1/completions', {
+                    model: 'text-davinci-003',
+                    prompt: `Create a creative TikTok script about "${theme}". The script should be short, engaging, and suitable for a viral TikTok video.`,
+                    max_tokens: 200,
+                    temperature: 0.8
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                return response.data.choices[0].text.trim();
+            } catch (error) {
+                console.error('Error fetching script:', error);
+                return 'Sorry, there was an issue generating the script.';
+            }
+        }
+
+        function startTeleprompterScript(script) {
+            let words = script.split(' ');
+            let currentWordIndex = 0;
+
+            function showNextWord() {
+                if (currentWordIndex < words.length) {
+                    teleprompterDiv.textContent = words.slice(0, currentWordIndex + 1).join(' ');
+                    currentWordIndex++;
+                } else {
+                    stopTeleprompter();
+                }
+            }
+
+            teleprompterBox.classList.remove('hidden');
+            teleprompterDiv.textContent = '';
+            const intervalId = setInterval(showNextWord, 100);
+
+            stopTeleprompterBtn.classList.remove('hidden');
+            startTeleprompterBtn.classList.add('hidden');
+
+            stopTeleprompterBtn.addEventListener('click', () => {
+                clearInterval(intervalId);
+                stopTeleprompter();
+            });
+        }
+
+        function stopTeleprompter() {
+            teleprompterBox.classList.add('hidden');
+            startTeleprompterBtn.classList.remove('hidden');
+            stopTeleprompterBtn.classList.add('hidden');
+        }
+
+        generateScriptBtn.addEventListener('click', async () => {
+            const theme = themeInput.value.trim();
+            if (!theme) return;
+
+            const script = await getScriptFromOpenAI(theme);
+            generatedScriptDiv.textContent = script;
+            themeInput.value = '';
+        });
+
+        startTeleprompterBtn.addEventListener('click', () => {
+            const script = generatedScriptDiv.textContent;
+            if (script) {
+                startTeleprompterScript(script);
+            }
+        });
+
+    </script>
+</body>
+</html>

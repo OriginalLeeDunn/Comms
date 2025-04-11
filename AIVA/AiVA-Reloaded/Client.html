@@ -1,0 +1,45 @@
+<!-- index.html (Frontend) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Model Interaction</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></script>
+</head>
+<body class="bg-black text-white font-sans">
+
+    <div class="flex flex-col justify-center items-center min-h-screen">
+        <h1 class="text-3xl mb-4 text-green-500">Ollama Model Interaction</h1>
+        <input id="prompt" type="text" class="p-2 w-1/2 mb-4 text-black" placeholder="Enter prompt here" />
+        <button onclick="submitPrompt()" class="p-2 bg-green-500 text-white rounded-lg">Submit</button>
+        <div id="response" class="mt-4 text-xl text-gray-400"></div>
+    </div>
+
+    <script>
+        async function submitPrompt() {
+            const promptText = document.getElementById('prompt').value;
+            
+            if (promptText.trim() === '') {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            const responseDiv = document.getElementById('response');
+            responseDiv.innerText = 'Loading...';
+
+            try {
+                const response = await axios.post('http://localhost:5000/ollama', {
+                    prompt: promptText
+                });
+
+                responseDiv.innerText = response.data.result || 'No result from model';
+            } catch (error) {
+                console.error('Error with request:', error);
+                responseDiv.innerText = 'Error occurred. Please try again.';
+            }
+        }
+    </script>
+</body>
+</html>
